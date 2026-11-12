@@ -84,12 +84,19 @@
 
   .log{display:grid;grid-template-columns:300px 1fr;border:1px solid var(--line);border-radius:16px;background:var(--panel);overflow:hidden}
   .index{border-right:1px solid var(--line);display:flex;flex-direction:column}
-  .index button{display:grid;grid-template-columns:34px 1fr;gap:6px;text-align:left;padding:22px 24px;border-bottom:1px solid var(--line);transition:background .25s;position:relative}
+  .index button{display:grid;grid-template-columns:34px 1fr 30px;align-items:center;gap:6px;text-align:left;padding:22px 24px;border-bottom:1px solid var(--line);transition:background .25s;position:relative}
   .index button:hover{background:rgba(170,190,255,.04)}
-  .index button.on{background:rgba(233,185,73,.07)}
+  .index button.on{background:rgba(233,185,73,.09)}
   .index button.on::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--gold)}
   .index .n{font-family:var(--mono);font-size:12px;color:var(--muted);padding-top:3px}
   .index button.on .n{color:var(--gold)}
+  .index .n{align-self:start}
+  .mini{width:30px;height:30px;overflow:visible}
+  .mini ellipse{fill:none;stroke:rgba(170,190,255,.4);stroke-width:1}
+  .mini .c{fill:rgba(233,185,73,.55)}
+  .mini .pl{fill:#c9d0ea;transition:fill .3s}
+  .index button.on .mini .pl{fill:var(--gold)}
+  .index button.on .mini ellipse{stroke:rgba(233,185,73,.5)}
   .index .t{font-family:var(--serif);font-size:20px;line-height:1.2}
   .index .s{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:5px}
 
@@ -217,7 +224,8 @@
         <svg viewBox="-280 -280 560 560" id="sys">
           <g id="ticks"></g>
           <g id="orbits"></g>
-          <circle r="30" fill="rgba(233,185,73,.08)"/>
+          <g id="trails"></g>
+          <circle r="30" fill="rgba(233,185,73,.08)" id="corona"/>
           <circle r="14" fill="rgba(233,185,73,.18)"/>
           <circle r="6.5" class="sun"/>
           <g id="bodies"></g>
@@ -245,7 +253,7 @@
         <div class="entries">
 
           <!-- VCG -->
-          <article class="entry" id="vcg" data-title="Valley Consulting" data-sub="Consulting · Now">
+          <article class="entry" id="vcg" data-coord="37.87° N 122.26° W" data-title="Valley Consulting" data-sub="Consulting · Now">
             <div class="e-top"><span class="label">Log 01 · Consulting</span><span class="label">Fall 2026 – Present · Berkeley</span></div>
             <h3>Valley Consulting Group</h3>
             <p class="role">Consultant, Pricing Team · Client: Packaging Matters</p>
@@ -266,7 +274,7 @@
           </article>
 
           <!-- GLENAIR -->
-          <article class="entry" id="glenair" data-title="Glenair" data-sub="Materials · Summer 26">
+          <article class="entry" id="glenair" data-coord="34.15° N 118.25° W" data-title="Glenair" data-sub="Materials · Summer 26">
             <div class="e-top"><span class="label">Log 02 · Materials engineering</span><span class="label">May – Aug 2026 · Glendale, CA</span></div>
             <h3>Glenair</h3>
             <p class="role">Materials Engineering Intern, Materials &amp; Process Group</p>
@@ -311,7 +319,7 @@
           </article>
 
           <!-- VORTEX -->
-          <article class="entry" id="vortex" data-title="VORTEX" data-sub="Research · Now">
+          <article class="entry" id="vortex" data-coord="34.40° N 118.57° W" data-title="VORTEX" data-sub="Research · Now">
             <div class="e-top"><span class="label">Log 03 · Research hardware</span><span class="label">Jun 2026 – Present · Santa Clarita</span></div>
             <h3>VORTEX</h3>
             <p class="role">Mechanical Team · Visualization of Relativistic Tidal EXtremes</p>
@@ -344,7 +352,7 @@
           </article>
 
           <!-- ASTROSCALE -->
-          <article class="entry" id="astroscale" data-title="Astroscale U.S." data-sub="Space policy · Spring 26">
+          <article class="entry" id="astroscale" data-coord="37.87° N 122.26° W" data-title="Astroscale U.S." data-sub="Space policy · Spring 26">
             <div class="e-top"><span class="label">Log 04 · Space policy</span><span class="label">Jan – May 2026 · Berkeley</span></div>
             <h3>Astroscale U.S.</h3>
             <p class="role">Policy Strategy Consultant (Contract), through NewSpace at Berkeley</p>
@@ -368,7 +376,7 @@
           </article>
 
           <!-- SEB -->
-          <article class="entry" id="seb" data-title="Space Enterprise" data-sub="Rocket structures · Spring 26">
+          <article class="entry" id="seb" data-coord="37.87° N 122.26° W" data-title="Space Enterprise" data-sub="Rocket structures · Spring 26">
             <div class="e-top"><span class="label">Log 05 · Rocket structures</span><span class="label">Jan – Jun 2026 · Berkeley</span></div>
             <h3>Space Enterprise at Berkeley</h3>
             <p class="role">Structures Team</p>
@@ -436,16 +444,80 @@
 <script>
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// starfield
+// starfield: parallax, cursor-following star lines, and real constellations revealed nearby
 (function(){
-  const c=document.getElementById('sky'),x=c.getContext('2d');let stars=[],w,h;
-  function size(){const d=Math.min(devicePixelRatio||1,2);w=c.width=innerWidth*d;h=c.height=innerHeight*d;
-    stars=Array.from({length:Math.round(innerWidth*innerHeight/5500)},()=>({x:Math.random()*w,y:Math.random()*h,
-      r:(Math.random()<.92?Math.random()*.9+.3:Math.random()*1.3+1)*d,a:Math.random()*.55+.2,s:Math.random()*.015+.004,p:Math.random()*6.3,g:Math.random()<.07}));}
-  function draw(t){x.clearRect(0,0,w,h);for(const s of stars){const a=reduce?s.a:s.a*(.65+.35*Math.sin(t*s.s*.06+s.p));
-    x.beginPath();x.arc(s.x,s.y,s.r,0,6.283);x.fillStyle=s.g?`rgba(233,185,73,${a})`:`rgba(238,241,255,${a})`;x.fill();}
+  const c=document.getElementById('sky'),x=c.getContext('2d');let stars=[],w,h,d=1;
+  const fine=matchMedia('(pointer:fine)').matches;
+  const m={x:-9999,y:-9999,tx:-9999,ty:-9999,px:0,py:0,tpx:0,tpy:0,on:false};
+  function size(){d=Math.min(devicePixelRatio||1,2);w=c.width=innerWidth*d;h=c.height=innerHeight*d;
+    stars=Array.from({length:Math.round(innerWidth*innerHeight/5000)},()=>{const z=Math.random();return{x:Math.random()*w,y:Math.random()*h,z,
+      r:(Math.random()<.92?Math.random()*.9+.3:Math.random()*1.3+1)*d*(.7+z*.5),a:Math.random()*.55+.2,s:Math.random()*.015+.004,p:Math.random()*6.3,g:Math.random()<.07}});}
+  if(fine&&!reduce){
+    addEventListener('mousemove',e=>{m.tx=e.clientX*d;m.ty=e.clientY*d;m.tpx=e.clientX/innerWidth-.5;m.tpy=e.clientY/innerHeight-.5;
+      if(!m.on){m.x=m.tx;m.y=m.ty;m.on=true;}});
+    document.addEventListener('mouseleave',()=>{m.on=false;m.tx=m.ty=-9999;});
+  }
+  // Real constellations (approximate star positions), revealed when the cursor comes near.
+  const CONST=[
+    {n:'Ursa Major',fx:.24,fy:.09,k:36,p:[[0,0],[0,1],[1.1,1.2],[1.2,.3],[2.2,.2],[3.1,.25],[4,.9]],l:[[0,1],[1,2],[2,3],[3,0],[3,4],[4,5],[5,6]]},
+    {n:'Cassiopeia',fx:.52,fy:.1,k:34,p:[[0,.4],[.9,1.1],[1.7,.6],[2.6,1.2],[3.3,.2]],l:[[0,1],[1,2],[2,3],[3,4]]},
+    {n:'Leo',fx:.82,fy:.14,k:30,p:[[0,2],[.1,1.2],[.5,.6],[.4,-.1],[-.2,-.4],[-.6,0],[3.5,1.6],[2.3,.8],[2.4,1.7]],l:[[0,1],[1,2],[2,3],[3,4],[4,5],[2,7],[7,6],[6,8],[8,0]]},
+    {n:'Orion',fx:.47,fy:.55,k:40,p:[[0,0],[2,.3],[.8,2.2],[1.1,2.1],[1.4,2],[.5,4],[2.4,3.8],[1,-.8]],l:[[7,0],[7,1],[0,2],[1,4],[2,3],[3,4],[2,5],[4,6]]},
+    {n:'Lyra',fx:.3,fy:.8,k:32,p:[[0,0],[.5,-.4],[.5,.5],[.9,.6],[1.1,1.5],[.6,1.5]],l:[[0,1],[0,2],[2,3],[3,4],[4,5],[5,2]]},
+    {n:'Cygnus',fx:.86,fy:.66,k:38,p:[[1,0],[1,1.2],[1,3],[-.2,.7],[2.2,1.8]],l:[[0,1],[1,2],[3,1],[1,4]]},
+    {n:'Crux',fx:.06,fy:.66,k:32,p:[[0,0],[0,1.6],[-.6,.8],[.6,.7]],l:[[0,1],[2,3]]},
+    {n:'Ursa Minor',fx:.02,fy:.28,k:22,p:[[0,0],[.6,.3],[1.1,.7],[1.6,1],[1.9,1.6],[2.6,1.5],[2.5,.9]],l:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,3]]},
+    {n:'Gemini',fx:.92,fy:.3,k:26,p:[[0,0],[.8,.3],[.2,1.2],[.4,2.4],[1.1,1.4],[1.3,2.5],[-.3,2.1]],l:[[0,1],[0,2],[2,3],[2,6],[1,4],[4,5]]},
+    {n:'Taurus',fx:.6,fy:.8,k:26,p:[[1.3,1.2],[.7,.8],[-.4,-.2],[.6,1.5],[-.3,1.7],[2.2,1.6]],l:[[0,1],[1,2],[0,3],[3,4],[0,5]]},
+    {n:'Scorpius',fx:.37,fy:.86,k:26,p:[[0,0],[.3,.5],[.6,.1],[.6,1.1],[.8,1.7],[1,2.3],[1.4,2.8],[2,2.9],[2.4,2.6],[2.5,2.1],[2.3,1.8]],l:[[0,1],[2,1],[1,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10]]},
+    {n:'Canis Major',fx:.14,fy:.82,k:24,p:[[0,0],[-.5,-.6],[.2,.8],[.6,1.6],[1.1,2.3],[.1,2],[-.4,.3]],l:[[1,0],[0,6],[0,2],[2,3],[3,4],[3,5]]},
+    {n:'Pegasus',fx:.68,fy:.07,k:22,p:[[0,0],[1.6,0],[1.6,1.5],[0,1.5],[-.9,-.4],[-1.7,-.7]],l:[[0,1],[1,2],[2,3],[3,0],[0,4],[4,5]]},
+    {n:'Sagittarius',fx:.94,fy:.85,k:24,p:[[0,.6],[.6,0],[1.1,.4],[1.6,0],[1.8,.7],[1.3,1.3],[.5,1.2]],l:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[2,5]]},
+    {n:'Corona Borealis',fx:.37,fy:.12,k:22,p:[[0,0],[.4,.5],[.9,.75],[1.4,.7],[1.8,.4],[2,0]],l:[[0,1],[1,2],[2,3],[3,4],[4,5]]},
+    {n:'Aquila',fx:.95,fy:.5,k:22,p:[[0,0],[.5,-.2],[1,-.4],[.6,.7],[.4,1.5],[1.3,.6]],l:[[0,1],[1,2],[1,3],[3,4],[1,5]]}
+  ];
+  CONST.forEach(c=>{c.v=0;});
+  let cycle=0;
+  function cpts(c){const sc=Math.min(1,innerWidth/1200)*c.k*d,ox=c.fx*w-m.px*24*d,oy=c.fy*h-m.py*24*d;return c.p.map(([u,v])=>[ox+u*sc,oy+v*sc]);}
+  function draw(t){
+    m.x+=(m.tx-m.x)*.15;m.y+=(m.ty-m.y)*.15;m.px+=(m.tpx-m.px)*.05;m.py+=(m.tpy-m.py)*.05;
+    x.clearRect(0,0,w,h);
+    const R=150*d,near=[];
+    for(const s of stars){
+      const sx=s.x-m.px*40*d*s.z, sy=s.y-m.py*40*d*s.z;
+      let a=reduce?s.a:s.a*(.65+.35*Math.sin(t*s.s*.06+s.p)),r=s.r;
+      if(m.on){const dist=Math.hypot(sx-m.x,sy-m.y);if(dist<R){const f=1-dist/R;a=Math.min(1,a+f*.5);r*=1+f*.5;near.push({x:sx,y:sy,f});}}
+      x.beginPath();x.arc(sx,sy,r,0,6.283);x.fillStyle=s.g?`rgba(233,185,73,${a})`:`rgba(238,241,255,${a})`;x.fill();}
+    // faint lines that follow the cursor, linking each nearby star to its two closest neighbours
+    if(near.length>1){x.lineWidth=.8*d;const D=R*.55,seen=new Set();
+      near.forEach((p,i)=>{const nb=near.map((q,j)=>[j,Math.hypot(p.x-q.x,p.y-q.y)]).filter(([j,dd])=>j!==i&&dd<D).sort((u,v)=>u[1]-v[1]).slice(0,2);
+        for(const [j,dd] of nb){const key=i<j?i+'-'+j:j+'-'+i;if(seen.has(key))continue;seen.add(key);const q=near[j],al=Math.min(p.f,q.f)*(1-dd/D)*.65;
+          x.strokeStyle=`rgba(233,185,73,${al})`;x.beginPath();x.moveTo(p.x,p.y);x.lineTo(q.x,q.y);x.stroke();}});}
+    // constellations
+    if(!fine&&!reduce)cycle=Math.floor(t/5000)%CONST.length;
+    CONST.forEach((c,ci)=>{
+      const P=cpts(c);let cx=0,cy=0;P.forEach(q=>{cx+=q[0];cy+=q[1]});cx/=P.length;cy/=P.length;
+      let target=0;
+      if(m.on){const dist=Math.hypot(cx-m.x,cy-m.y);target=Math.max(0,Math.min(1,1-(dist-90*d)/(160*d)));}
+      else if(!fine&&!reduce)target=ci===cycle?1:0;
+      c.v+=(target-c.v)*(reduce?1:.07);
+      // constellation stars are always a touch brighter than the field
+      P.forEach(([px,py])=>{x.beginPath();x.arc(px,py,(1.5+c.v*1)*d,0,6.283);x.fillStyle=`rgba(238,241,255,${.5+c.v*.5})`;x.fill();
+        if(c.v>.02){x.beginPath();x.arc(px,py,5*d*c.v,0,6.283);x.fillStyle=`rgba(233,185,73,${.12*c.v})`;x.fill();}});
+      if(c.v>.02){
+        x.lineWidth=.9*d;x.strokeStyle=`rgba(233,185,73,${.45*c.v})`;
+        // lines draw outward as the constellation fades in
+        x.beginPath();c.l.forEach(([i,j])=>{const A=P[i],B=P[j];x.moveTo(A[0],A[1]);x.lineTo(A[0]+(B[0]-A[0])*Math.min(1,c.v*1.3),A[1]+(B[1]-A[1])*Math.min(1,c.v*1.3));});x.stroke();
+      }
+    });
     if(!reduce)requestAnimationFrame(draw);}
   size();addEventListener('resize',()=>{size();if(reduce)draw(0)});requestAnimationFrame(draw);
+
+  // orbit diagram tilts toward the cursor
+  const sys=document.querySelector('.system svg');
+  if(sys&&fine&&!reduce){sys.style.transition='transform .6s cubic-bezier(.2,.7,.2,1)';
+    addEventListener('mousemove',e=>{const rx=(e.clientY/innerHeight-.5)*-14,ry=(e.clientX/innerWidth-.5)*16;
+      sys.style.transform=`perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg)`;});}
 })();
 
 // log + orbit system
@@ -453,7 +525,7 @@ const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const entries=[...document.querySelectorAll('.entry')];
   const idx=document.getElementById('index');
   const NS='http://www.w3.org/2000/svg';
-  const orbitsG=document.getElementById('orbits'),bodiesG=document.getElementById('bodies'),ticks=document.getElementById('ticks');
+  const orbitsG=document.getElementById('orbits'),trailsG=document.getElementById('trails'),bodiesG=document.getElementById('bodies'),ticks=document.getElementById('ticks');
   const tilt=-0.38, squash=.62;
   const radii=[70,110,152,196,240];
   const speeds=[.11,.075,.052,.038,.028];
@@ -466,7 +538,8 @@ const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   entries.forEach((e,i)=>{
     const b=document.createElement('button');b.setAttribute('role','tab');
-    b.innerHTML=`<span class="n">0${i+1}</span><span><span class="t">${e.dataset.title}</span><span class="s">${e.dataset.sub}</span></span>`;
+    b.innerHTML=`<span class="n">0${i+1}</span><span><span class="t">${e.dataset.title}</span><span class="s">${e.dataset.sub}</span></span>`+
+      `<svg class="mini" viewBox="-15 -15 30 30" aria-hidden="true"><ellipse rx="12" ry="${(12*squash).toFixed(1)}" transform="rotate(${(tilt*180/Math.PI).toFixed(1)})"/><circle class="c" r="1.6"/><circle class="pl" r="2.3"/></svg>`;
     b.onclick=()=>select(i,false);idx.appendChild(b);
     const o=document.createElementNS(NS,'ellipse');o.setAttribute('rx',radii[i]);o.setAttribute('ry',radii[i]*squash);
     o.setAttribute('transform',`rotate(${tilt*180/Math.PI})`);o.setAttribute('class','orb');orbitsG.appendChild(o);
@@ -474,11 +547,24 @@ const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     g.setAttribute('aria-label','Open '+e.dataset.title);
     g.innerHTML=`<circle class="halo" r="15"/><circle class="p" r="${4+i*.6}"/><text x="12" y="-10">${e.dataset.title}</text>`;
     g.onclick=()=>select(i,true);g.onkeydown=ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();select(i,true)}};
-    bodiesG.appendChild(g);bodies.push({g,o,b,a:start[i]});
+    const tr=[];for(let k=0;k<6;k++){const p=document.createElementNS(NS,'path');p.setAttribute('fill','none');p.setAttribute('stroke','#e9b949');
+      p.setAttribute('stroke-width',(1.6-k*.2).toFixed(2));p.setAttribute('stroke-linecap','round');p.setAttribute('stroke-opacity',(.42-k*.07).toFixed(2));trailsG.appendChild(p);tr.push(p);}
+    g.addEventListener('mouseenter',()=>B.hold=true);g.addEventListener('mouseleave',()=>B.hold=false);
+    const B={g,o,b,a:start[i],tr,hold:false,v:1,mini:b.querySelector('.pl')};
+    bodiesG.appendChild(g);bodies.push(B);
   });
 
-  function place(B,i){const r=radii[i];const ex=Math.cos(B.a)*r,ey=Math.sin(B.a)*r*squash;
-    const x=ex*Math.cos(tilt)-ey*Math.sin(tilt),y=ex*Math.sin(tilt)+ey*Math.cos(tilt);B.g.setAttribute('transform',`translate(${x.toFixed(1)},${y.toFixed(1)})`);}
+  function pt(i,a){const r=radii[i];const ex=Math.cos(a)*r,ey=Math.sin(a)*r*squash;
+    return [ex*Math.cos(tilt)-ey*Math.sin(tilt),ex*Math.sin(tilt)+ey*Math.cos(tilt)];}
+  function place(B,i){const [x,y]=pt(i,B.a);B.g.setAttribute('transform',`translate(${x.toFixed(1)},${y.toFixed(1)})`);
+    // each log entry's mini orbit mirrors its planet in the hero diagram
+    const k=12/radii[i];B.mini.setAttribute('cx',(x*k).toFixed(2));B.mini.setAttribute('cy',(y*k).toFixed(2));
+    // fading trail behind each planet
+    const span=.5/(1+i*.25);
+    B.tr.forEach((p,k)=>{let d='';for(let n=0;n<=4;n++){const [px,py]=pt(i,B.a-span*(k+n/4)/6);d+=(n?'L':'M')+px.toFixed(1)+' '+py.toFixed(1);}p.setAttribute('d',d);});}
+  const sysEl=document.querySelector('.system');let fast=false;
+  sysEl.addEventListener('mouseenter',()=>fast=true);sysEl.addEventListener('mouseleave',()=>fast=false);
+  const corona=document.getElementById('corona');
 
   const mobile=()=>matchMedia('(max-width:960px)').matches;
   function select(i,scroll){
@@ -488,7 +574,8 @@ const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   select(0,false);
 
   let last=0;function tick(t){const dt=last?Math.min((t-last)/1000,.1):0;last=t;
-    bodies.forEach((B,i)=>{B.a+=speeds[i]*dt;place(B,i)});requestAnimationFrame(tick);}
+    bodies.forEach((B,i)=>{const target=B.hold?0:(fast?2.2:1);B.v+=(target-B.v)*.06;B.a+=speeds[i]*B.v*dt;place(B,i)});
+    corona.setAttribute('r',(30+Math.sin(t/900)*4).toFixed(2));requestAnimationFrame(tick);}
   bodies.forEach(place);if(!reduce)requestAnimationFrame(tick);
 })();
 
